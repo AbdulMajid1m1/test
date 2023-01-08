@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 
-// DRIVER SCHEMAA
+// DRIVER SCHEMAAs
 const businessSchema = new mongoose.Schema(
     {
         address: { type: String, default: "" },
