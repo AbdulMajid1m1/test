@@ -1,100 +1,88 @@
 const router = require("express").Router();
-const Business = require("../models/business");
-const User = require("../models/user");
+const Product = require("../models/product");
+const fileUpload = require("express-fileupload");
+const cloudinary = require("cloudinary").v2;
 
+cloudinary.config({
+    cloud_name: "creativem",
+    api_key: "728829647533853",
+    api_secret: "d7FOpvaEzC9D0XmKY_pGqzGTUm4",
+});
 
-router.post("/business-login", async (req, res) => {
-    const { address, businessEmail, logo, user_id } = req.body;
-
-    const business = new Business({
-        address,
-        businessEmail,
-        logo,
-        user_id,
-    });
-
+router.get("/get-all-products", async (req, res) => {
     try {
-        const savedBusiness = await business.save();
-        res.send(savedBusiness);
+        const products = await Product.find();
+        res.send(products);
     } catch (err) {
-        res.status(400).send(err);
+        res
+            .status(400)
+            .send(err);
     }
 });
 
-// user route to get all users  who have business email as 'abc@gmail.com'
-router.get("/get-users", async (req, res) => {
+router.get("/get-product/:id", async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        res.send(product);
+    } catch (err) {
+        res
+            .status(400)
+            .send(err);
+    }
+});
 
-    Business.find({ email: 'abc@gmail.com' }, function (err, docs) {
-        if (err) {
-            console.log(err);
-        }
+router.delete("/delete-product/:id", async (req, res) => {
+    try {
+        const product = await Product.findByIdAndDelete(req.params.id);
+        res.send(product);
+    } catch (err) {
+        res
+            .status(400)
+            .send(err);
+    }
+});
 
-        else {
-            const userIds = docs.map(doc => doc.user_id);
 
-            User.find({ _id: { $in: userIds } }, function (err, users) {
+
+router.post("/add-product", async (req, res) => {
+    const { ProductName, totalStock, purchasePrice, sellingPrice, id } = req.body; // destructure the request body
+    let productImg = "";
+    if (req.files) {
+        if (Object.prototype.hasOwnProperty.call(req.files, 'productImg')) {
+            productImg = req.files.productImg;
+            await cloudinary.uploader.upload(productImg.tempFilePath, function (err, result) {
                 if (err) {
                     console.log(err);
                 }
                 else {
-                    res.status(200).json(users);
+                    productImg = result.url;
                 }
-            }).limit(3);
-
+            }
+            );
         }
-    });
-});
+    } else {
+        productImg = "";
+    }
 
 
-// Route for Q1 users to get registered
-router.post("/user-login", (req, res) => {
-
-    const user = new User({ name: req.body.name, email: "abc@gmail.com", password: "123" });
-    user.save(function (err) {
-        if (err) return console.log(err);
-
-        else {
-            res.status(200).json(user);
-        }
+    const product = new Product({
+        productImg,
+        ProductName,
+        totalStock,
+        purchasePrice,
+        sellingPrice,
+        id,
     });
 
-
-
+    try {
+        const savedProduct = await product.save();
+        res.send(savedProduct);
+    } catch (err) {
+        res
+            .status(400)
+            .send(err);
+    }
 });
-
-
-// Q2 Route to get all users who have followers with the given ID and  status pending
-router.get("/all-users", async (req, res) => {
-    User.find(
-        { $and: [{ "followers": { $in: ["_id", "62ff927bf268cc41bc596a02"] } }, { status: "pending" }] },
-        function (err, docs) {
-            if (err) {
-                console.log(err);
-            }
-            else {
-                res.status(200).json(docs);
-            }
-        }
-    );
-
-});
-
-
 
 
 module.exports = router;
-
-
-// Q4 Route to insert a user into followers array of another user
-
-router.get("/insert-into-followers", async (req, res) => {
-    User.updateOne({ _id: "62ff927bf268cc41bc596a02" }, { $push: { followers: "60ff927bf268cc41bc596a02" } }, function (err, docs) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            res.status(200).json(docs);
-        }
-    });
-
-});
