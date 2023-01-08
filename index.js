@@ -3,46 +3,51 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const { Connection } = require("mongoose");
 const app = express();
+const fileUpload = require("express-fileupload");
+const cloudinary = require("cloudinary").v2;
 
+cloudinary.config({
+    cloud_name: "creativem",
+    api_key: "728829647533853",
+    api_secret: "d7FOpvaEzC9D0XmKY_pGqzGTUm4",
+});
+const cors = require("cors");
+app.use(
+    fileUpload({
+        useTempFiles: true, // this is the default
 
+    })
+);
 //database connection
-mongoose.connect("mongodb+srv://jason123:HappyDAYS1@cluster0.wy0ayit.mongodb.net/testDB?retryWrites=true&w=majority", {
+mongoose.set("strictQuery", false);
+mongoose.connect("mongodb+srv://jason123:HappyDAYS1@cluster0.wy0ayit.mongodb.net/dashboard?retryWrites=true&w=majority", {
     useNewUrlParser: true,
+}).then(() => {
+    console.log("Connected to database");
+}).catch((e) => {
+    console.log(e);
 });
 
-app.use(bodyParser.json());
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use("/", require("./routes/Route"));
 
-const port = process.env.PORT || 3000;
+
+
+
+
+
+
+
+
+
+const port = process.env.PORT || 5000;
 app.listen(port, function () {
     console.log(`Server has started on ${port}`);
 });
 
 
-// hitting the route will give you the smallest positive number in the array which is 3
 
-app.get("/get-smallest-positive-number", (req, res) => {
-    function smallestPositiveInteger(array) {
-        let smallest = Number.MAX_VALUE;
-
-        for (let i = 0; i < array.length; i++) {
-            if (array[i] > 0 && array[i] < smallest) {
-                smallest = array[i];
-            }
-        }
-
-        if (smallest === Number.MAX_VALUE) {
-            return 0;
-        }
-
-        return smallest;
-    }
-    let array = [-2, 3, 4, 7];
-    let smallest = smallestPositiveInteger(array);
-    console.log(smallest);
-
-    res.send(smallest);
-});
